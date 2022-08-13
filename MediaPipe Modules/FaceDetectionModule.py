@@ -28,7 +28,7 @@ with mp_face_detection.FaceDetection(
         print(detection.location_data.relative_bounding_box)
         mp_drawing.draw_detection(image, detection)
     # Flip the image horizontally for a selfie-view display.
-    cv2.imshow('MediaPipe Face Detection', cv2.flip(image, 1))
+    cv2.imshow('MediaPipe Modules Face Detection', cv2.flip(image, 1))
     if cv2.waitKey(5) & 0xFF == 27:
       break
 cap.release()
