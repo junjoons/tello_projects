@@ -1,9 +1,8 @@
-import time
 import cv2
 import numpy as np
 # import os
 import mediapipe as mp
-# from djitellopy import tello
+from djitellopy import tello
 
 mp_face_detection = mp.solutions.face_detection
 mp_drawing = mp.solutions.drawing_utils
@@ -17,63 +16,58 @@ width, height = 960, 540
 # me.connect()
 # print(me.get_battery())
 # me.streamon()
-
-while True:
-    cap = cv2.VideoCapture(0)
-    # cap = me.get_frame_read().frame
-    success, img = cap.read()
-    print(img)
-    if len(img) != 0:
-        break
-
-time.sleep(3)
+#
+# while True:
+#     img = me.get_frame_read().frame
+#     print(img)
+#     if len(img) != 0:
+#         break
+#
 # me.takeoff()
-time.sleep(3)
-# 여기서 비동기처리가 안돼서 에러날수 있음
+# me.move_up(50)
 
-# cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(0)
 
 
-def findFaces(img):
+def findFaces():
     with mp_face_detection.FaceDetection(
             model_selection=0, min_detection_confidence=0.5) as face_detection:
+        while cap.isOpened():
+            success, img = cap.read()
+            if not success:
+                print("Video Input not available")
+                continue
+            img.flags.writeable = False
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+            results = face_detection.process(img)
+            # img.flags.writeable = True
+            img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+            face_list = []
+            max_face = []
+            max_area = -1
 
-        # success, img = cap.read()
-        # if not success:
-        #     print("Video Input not available")
-        #     continue
-        img.flags.writeable = False
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        results = face_detection.process(img)
-        # img.flags.writeable = True
-        img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
-        face_list = []
-        max_face = []
-        max_area = -1
+            if results.detections:
+                for detection in results.detections:
+                    xpos = int(width * detection.location_data.relative_bounding_box.xmin)
+                    ypos = int(height * detection.location_data.relative_bounding_box.ymin)
+                    real_width = int(width * detection.location_data.relative_bounding_box.width)
+                    real_height = int(height * detection.location_data.relative_bounding_box.height)
+                    face_list.append([xpos, ypos, real_width, real_height])
+                    mp_drawing.draw_detection(img, detection)
 
-        if results.detections:
-            for detection in results.detections:
-                xpos = int(width * detection.location_data.relative_bounding_box.xmin)
-                ypos = int(height * detection.location_data.relative_bounding_box.ymin)
-                real_width = int(width * detection.location_data.relative_bounding_box.width)
-                real_height = int(height * detection.location_data.relative_bounding_box.height)
-                face_list.append([xpos, ypos, real_width, real_height])
-                img.flags.writeable = True
-                mp_drawing.draw_detection(img, detection)
+                for i in face_list:
+                    area = i[2] * i[3]
+                    if area > max_area:
+                        max_area = area
+                        max_face = [i[0], i[1], i[2], i[3]]
+                cx = (max_face[0] + max_face[2]) // 2  # (xpos + real_width) // 2
+                cy = (max_face[1] + max_face[3]) // 2  # (ypos + real_height) // 2
+                area = max_face[2] * max_face[3]  # width * height
 
-            for i in face_list:
-                area = i[2] * i[3]
-                if area > max_area:
-                    max_area = area
-                    max_face = [i[0], i[1], i[2], i[3]]
-            cx = (max_face[0] + max_face[2]) // 2  # (xpos + real_width) // 2
-            cy = (max_face[1] + max_face[3]) // 2  # (ypos + real_height) // 2
-            area = max_face[2] * max_face[3]  # width * height
+                return img, max_face
 
-            return img, max_face
-
-        if not results.detections:
-            return img, [0, 0, 0, 0]
+            if not results.detections:
+                return img, [0, 0, 0, 0]
 
 
 def trackFace(info, width, pid, p_error):
@@ -88,13 +82,13 @@ def trackFace(info, width, pid, p_error):
     print(area)
     fb_speed = 0
 
-    if fb_range[0] <= area <= fb_range[1]:  # 적정거리
+    if fb_range[0] <= area and area <= fb_range[1]:  # 적정거리
         fb_speed = 0
         status = "적정 거리"
     elif area >= fb_range[0]:  # 너무 가깝다
         fb_speed -= 20
         status = "너무 가깝다"
-    elif 0 < area <= fb_range[1]:  # 너무 멀다
+    elif area <= fb_range[1]:  # 너무 멀다
         fb_speed += 20
         status = "너무 멀다"
     else:  # 감지 못함
@@ -106,17 +100,7 @@ def trackFace(info, width, pid, p_error):
 
 
 while True:
-    # cap = cv2.VideoCapture(0)
-    success, img = cap.read()
-    # img = me.get_frame_read().frame
-    # print(img)
-    # if len(img) == 0:
-    #     continue
-    # if not cap.isOpened():
-    #     continue
-
-    # img = me.get_frame_read().frame
-    img, face = findFaces(img)
+    img, face = findFaces()
     print(face)
     cv2.imshow("Face Detection", cv2.flip(img, 1))
 
