@@ -14,6 +14,14 @@ from model.keypoint_classifier.keypoint_classifier import KeyPointClassifier
 from model.point_history_classifier.point_history_classifier import PointHistoryClassifier
 from djitellopy import tello
 
+me = tello.Tello()
+# me.connect()
+# print(me.get_battery())
+speed = 30
+
+
+# me.streamon()
+
 
 def get_args():
     parser = argparse.ArgumentParser()
@@ -36,16 +44,30 @@ def get_args():
 
     return args
 
+
 def moveTello(is_HG_open, HG):
     if is_HG_open == True:
-        if HG == 'Left': pass
-        elif HG == 'Right': pass
-        elif HG == 'Up': pass
-        elif HG == 'Down': pass
-        elif HG == 'LFlip': pass
-        elif HG == "RFlip": pass
+        if HG == 'Left':
+            # me.send_rc_control(-speed, 0, 0, 0)
+            pass
+        elif HG == 'Right':
+            # me.send_rc_control(speed, 0, 0, 0)
+            pass
+        elif HG == 'Up':
+            # me.send_rc_control(0, 0, speed, 0)
+            pass
+        elif HG == 'Down':
+            # me.send_rc_control(0, 0, -speed, 0)
+            pass
+        elif HG == 'LFlip':
+            # me.flip_left()
+            pass
+        elif HG == "RFlip":
+            # me.flip_right()
+            pass
     else:
-        me.send_rc_control(0, 0, 0, 0)
+        # me.send_rc_control(0, 0, 0, 0)
+        pass
 
 
 def main():
@@ -107,6 +129,8 @@ def main():
 
     #  ########################################################################
     mode = 0
+    is_HG_open = False
+    final_HG = ''
 
     while True:
         which_hand = []
@@ -135,7 +159,7 @@ def main():
         #  ####################################################################
         if results.multi_hand_landmarks is not None:
 
-            #내가 쓴 부분 ###############################################################################
+            # 내가 쓴 부분 ###############################################################################
             # print(results.multi_handedness)
             for index in range(len(results.multi_handedness)):
                 # print(results.multi_handedness[index].classification[0].label)
@@ -149,8 +173,9 @@ def main():
             elif which_hand == ['Right', 'Left'] or which_hand == ['Left', 'Right']: hand_status = which_hand
             else: hand_status = []
             hand_num = len(hand_status)
-            index = 0
             '''
+            index = 0
+
             # 내가 쓴 부분 ###############################################################################
 
             for hand_landmarks, handedness in zip(results.multi_hand_landmarks,
@@ -170,7 +195,6 @@ def main():
                 # Write to the dataset file
                 logging_csv(number, mode, pre_processed_landmark_list,
                             pre_processed_point_history_list)
-
 
                 # DISABLED ###################################################################################
                 # Hand sign classification
@@ -196,6 +220,9 @@ def main():
                 # print(one_hand_gesture)
                 # hand_gesture = {}
 
+                hand_pos = results.multi_handedness[index].classification[0].label
+                hand_gesture = keypoint_classifier_labels[hand_sign_id]
+
                 # Drawing part
                 debug_image = draw_bounding_rect(use_brect, debug_image, brect)
                 debug_image = draw_landmarks(debug_image, landmark_list)
@@ -204,31 +231,35 @@ def main():
                     brect,
                     handedness,
                     keypoint_classifier_labels[hand_sign_id],  # 얘가 즉 Hand Gesture
-                    point_history_classifier_labels[most_common_fg_id[0][0]],
+                    point_history_classifier_labels[most_common_fg_id[0][0]]
                 )
 
                 # WRITTEN ##################################################################################
                 # print(results.multi_handedness[index].classification[0].label)
                 hand_pos = results.multi_handedness[index].classification[0].label
                 hand_gesture = keypoint_classifier_labels[hand_sign_id]
-                print(hand_pos, hand_gesture)
+                # print(hand_pos, hand_gesture)
 
                 if hand_pos == 'Left':
-                    if hand_gesture == 'Close': is_HG_open = False
-                    elif hand_gesture == 'Open': is_HG_open = True
-                    else: is_HG_open = False
+                    if hand_gesture == 'Open':
+                        is_HG_open = True
+                        if len(results.multi_handedness) == 1:
+                            final_HG = ''
+                    else:
+                        is_HG_open = False
+                        final_HG = ''
                 elif hand_pos == 'Right':
                     if hand_gesture is not None:
                         final_HG = hand_gesture
                 moveTello(is_HG_open, final_HG)
 
-                # index += 1
+                index += 1
                 # WRITTEN ##################################################################################
         else:
             point_history.append([0, 0])
 
         debug_image = draw_point_history(debug_image, point_history)
-        debug_image = draw_info(debug_image, fps, mode, number)
+        debug_image = draw_info(debug_image, fps, mode, number, is_HG_open, final_HG)
 
         # Screen reflection #############################################################
         cv.imshow('Hand Gesture Recognition', debug_image)
@@ -577,11 +608,22 @@ def draw_point_history(image, point_history):
     return image
 
 
-def draw_info(image, fps, mode, number):
+def draw_info(image, fps, mode, number, is_HG_open, final_HG):
     cv.putText(image, "FPS:" + str(fps), (10, 30), cv.FONT_HERSHEY_SIMPLEX,
                1.0, (0, 0, 0), 4, cv.LINE_AA)
     cv.putText(image, "FPS:" + str(fps), (10, 30), cv.FONT_HERSHEY_SIMPLEX,
                1.0, (255, 255, 255), 2, cv.LINE_AA)
+
+    # print(final_HG)
+
+    if is_HG_open:
+        cv.putText(image, "Hand Gesture:" + final_HG, (10, 60), cv.FONT_HERSHEY_SIMPLEX, 1.0, (0, 0, 0), 4, cv.LINE_AA)
+        cv.putText(image, "Hand Gesture:" + final_HG, (10, 60), cv.FONT_HERSHEY_SIMPLEX, 1.0, (255, 255, 255), 2,
+                   cv.LINE_AA)
+    else:
+        cv.putText(image, "Hand Gesture Recog Disabled", (10, 60), cv.FONT_HERSHEY_SIMPLEX, 1.0, (0, 0, 0), 4, cv.LINE_AA)
+        cv.putText(image, "Hand Gesture Recog Disabled", (10, 60), cv.FONT_HERSHEY_SIMPLEX, 1.0, (255, 255, 255), 2,
+                   cv.LINE_AA)
 
     mode_string = ['Logging Key Point', 'Logging Point History']
     if 1 <= mode <= 2:
@@ -596,9 +638,4 @@ def draw_info(image, fps, mode, number):
 
 
 if __name__ == '__main__':
-    me = tello.Tello()
-    me.connect()
-    print(me.get_battery())
-    # me.streamon()
-
     main()
