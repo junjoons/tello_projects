@@ -271,7 +271,7 @@ def main():
                         del HG_list[0]
                     if len(HG_list) == 4:
                         if HG_list[0] == HG_list[1] == HG_list[2] == HG_list[3]:
-                            # moveTello(is_HG_open, final_HG)
+                            moveTello(is_HG_open, final_HG)
                             pass
                         else:
                             pass
@@ -663,7 +663,7 @@ def draw_info(image, fps, mode, number, is_HG_open, final_HG):
 if __name__ == '__main__':
     me.connect()
     print(me.get_battery())
-    # me.takeoff()
+    me.takeoff()
     time.sleep(3)
 
     me.streamon()

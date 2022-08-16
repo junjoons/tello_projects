@@ -9,7 +9,7 @@ mp_face_detection = mp.solutions.face_detection
 mp_drawing = mp.solutions.drawing_utils
 
 fb_range = [35000, 50000]
-pid = [0.4, 0.4, 0]
+pid = [0.3, 0.3, 0]
 p_error = 0
 width, height = 960, 540
 
@@ -27,7 +27,7 @@ while True:
         break
 
 time.sleep(3)
-# me.takeoff()
+me.takeoff()
 time.sleep(3)
 # 여기서 비동기처리가 안돼서 에러날수 있음
 
@@ -92,10 +92,10 @@ def trackFace(info, width, pid, p_error):
         fb_speed = 0
         status = "적정 거리"
     elif area >= fb_range[0]:  # 너무 가깝다
-        fb_speed -= 20
+        fb_speed -= 15
         status = "너무 가깝다"
     elif 0 < area <= fb_range[1]:  # 너무 멀다
-        fb_speed += 20
+        fb_speed += 15
         status = "너무 멀다"
     else:  # 감지 못함
         fb_speed = 0
