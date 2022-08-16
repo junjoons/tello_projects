@@ -46,6 +46,7 @@ def get_args():
 
 
 def moveTello(is_HG_open, HG):
+    print("Tello Moved")
     if is_HG_open == True:
         if HG == 'Left':
             # me.send_rc_control(-speed, 0, 0, 0)
@@ -131,6 +132,7 @@ def main():
     mode = 0
     is_HG_open = False
     final_HG = ''
+    HG_list = []
 
     while True:
         which_hand = []
@@ -248,10 +250,20 @@ def main():
                     else:
                         is_HG_open = False
                         final_HG = ''
+
                 elif hand_pos == 'Right':
                     if hand_gesture is not None:
                         final_HG = hand_gesture
-                moveTello(is_HG_open, final_HG)
+                    HG_list.append(final_HG)
+
+
+                    if len(HG_list) >= 5:
+                        del HG_list[0]
+                    if len(HG_list) == 4:
+                        if HG_list[0] == HG_list[1] == HG_list[2] == HG_list[3]:
+                            moveTello(is_HG_open, final_HG)
+                        else:
+                            pass
 
                 index += 1
                 # WRITTEN ##################################################################################
