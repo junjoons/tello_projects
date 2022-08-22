@@ -58,9 +58,11 @@ def moveTello(is_HG_open, HG):
 
         elif HG == 'LFlip':
             me.flip_left()
+            time.sleep(3)
 
         elif HG == "RFlip":
             me.flip_right()
+            time.sleep(3)
 
     else:
         me.send_rc_control(0, 0, 0, 0)
@@ -69,6 +71,7 @@ def moveTello(is_HG_open, HG):
 def main():
     # Argument parsing #################################################################
     args = get_args()
+    
 
     cap_device = args.device
     cap_width = args.width
@@ -664,9 +667,9 @@ if __name__ == '__main__':
     me.connect()
     print(me.get_battery())
     me.takeoff()
-    time.sleep(3)
+    # time.sleep(3)
 
     me.streamon()
-    time.sleep(3)
+    # time.sleep(3)
 
     main()

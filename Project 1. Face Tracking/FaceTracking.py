@@ -26,9 +26,12 @@ while True:
     if len(cap) != 0:
         break
 
-time.sleep(3)
+# time.sleep(10)
+
 me.takeoff()
-time.sleep(3)
+
+# time.sleep(10)
+# me.move_up(50)
 # 여기서 비동기처리가 안돼서 에러날수 있음
 
 # cap = cv2.VideoCapture(0)
@@ -125,6 +128,6 @@ while True:
     me.send_rc_control(0, fb_speed, 0, yaw_speed)
 
     if cv2.waitKey(5) & 0xFF == 27:
-        me.land()
+        # me.land()
         break
 # cap.release()
